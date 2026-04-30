@@ -19,11 +19,7 @@ class Admin:
     def __init__(self, *, admin_token: str, user_token: str, chat_id: int):
         self.chat_id = chat_id
         self._admin_bot = Bot(token=admin_token)
-        self._user_bot = Bot(token=user_token)
         self._decision_lock = asyncio.Lock()
-
-    async def send_user_message(self, text: str) -> None:
-        await self._user_bot.send_message(chat_id=self.chat_id, text=text)
 
     async def request_admin_decision(
         self,
@@ -68,7 +64,14 @@ class Admin:
                     callback = update.callback_query
                     if not callback:
                         continue
-                    if callback.message.chat_id != self.chat_id:
+                    
+                    # 1. Önemli Kontrol: Mesaj var mı ve erişilebilir mi?
+                    # isinstance kontrolü linter'a bunun standart bir Message olduğunu kanıtlar.
+                    if not callback.message or not hasattr(callback.message, 'chat'):
+                        continue
+
+                    # callback.message.chat.id kullanımı daha garantidir
+                    if callback.message.chat.id != self.chat_id:
                         continue
 
                     data = callback.data or ""
@@ -152,9 +155,19 @@ class Admin:
 
 
 ## USERBOT
+chat_id = ""
+_user_bot = Bot(token=user_token)
+async def send_user_message(text: str) -> None:
+    await _user_bot.send_message(chat_id=chat_id, text=text)
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Mini App URL (HTTPS olmak zorundadır)
-    miniapp_url = "https://google.com"
+    if update.message is not None and update.message.from_user is not None:
+        user_id = update.message.from_user.id
+    else:
+        # Write here if there is no user info
+        user_id = None
+    miniapp_url = f"https://www.google.com/search?q={user_id}"
 
     # Inline klavye butonu oluşturma
     # 'web_app' parametresi butona tıklandığında Mini App'in açılmasını sağlar
@@ -168,10 +181,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text(
-        "Hoş geldiniz! Mini App'i başlatmak için aşağıdaki butona tıklayın:",
-        reply_markup=reply_markup
-    )
+    if update.effective_message:
+        await update.effective_message.reply_text(
+            "Hoş geldiniz! ...",
+            reply_markup=reply_markup
+        )
+
 
 if __name__ == '__main__':
 

@@ -1,6 +1,6 @@
 from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel
-from basvuru_bot import Admin
+from basvuru_bot import Admin, send_user_message
 from config import admin_token, user_token, admin_id
 
 admin_service = Admin(
@@ -48,7 +48,7 @@ async def run_admin_flow(data: Basvuru):
         f"Projeniz reddedildi.\n"
         f"{summary}\n\n"
         f"Red sebebi:\n {reason}")
-    await admin_service.send_user_message(message)
+    await send_user_message(text=message)
 
 
 @app.post("/basvuru")
