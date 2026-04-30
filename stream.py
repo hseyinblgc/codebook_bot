@@ -70,13 +70,3 @@ if submit_button:
             st.success(data.get("mesaj", "Mesaj bulunamadi"))
         except requests.RequestException as e:
             st.error(f"Gonderim hatasi: {e}")
-
-        # st.markdown("---")
-        # st.subheader("Gönderilen Bilgiler:")
-        # st.json({
-        #     "Ad Soyad": ad_soyad,
-        #     "GitHub": f"https://github.com/{github_user}",
-        #     "Proje": proje_adi,
-        #     "Açıklama": proje_ozet,
-        #     "Lisans Onayı": "Kabul Edildi (AGPLv3)"
-        # })

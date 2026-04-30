@@ -2,7 +2,7 @@ import logging
 from telegram import (Update, InlineKeyboardButton,
                       InlineKeyboardMarkup, WebAppInfo)
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
-from tg_token import user_token
+from config import user_token
 # Bot loglarını görmek için yapılandırma
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

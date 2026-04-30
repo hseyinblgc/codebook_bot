@@ -1,9 +1,8 @@
 
 import asyncio
 from uuid import uuid4
-
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
-from tg_token import admin_token, user_token, admin_id
+from config import admin_token, user_token, admin_id
 
 BOT_TOKEN = admin_token
 CHAT_ID = admin_id
