@@ -1,7 +1,13 @@
 from fastapi import FastAPI, BackgroundTasks
-from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
-from admin import request_admin_decision, send_user_message
+from basvuru_bot import Admin
+from config import admin_token, user_token, admin_id
+
+admin_service = Admin(
+    admin_token=admin_token,
+    user_token=user_token,
+    chat_id=admin_id
+)
 
 app = FastAPI()
 
@@ -24,8 +30,8 @@ def build_admin_message(data: Basvuru) -> str:
     )
 
 async def run_admin_flow(data: Basvuru):
-    message_text =f"Yeni başvuru geldi. Onaylıyor musunuz?\n\n" + build_admin_message(data)
-    result = await request_admin_decision(
+    message_text ="Yeni başvuru geldi. Onaylıyor musunuz?\n\n" + build_admin_message(data)
+    result = await admin_service.request_admin_decision(
         message_text,
         timeout_seconds=300,
     )
@@ -42,7 +48,7 @@ async def run_admin_flow(data: Basvuru):
         f"Projeniz reddedildi.\n"
         f"{summary}\n\n"
         f"Red sebebi:\n {reason}")
-    await send_user_message(message)
+    await admin_service.send_user_message(message)
 
 
 @app.post("/basvuru")
