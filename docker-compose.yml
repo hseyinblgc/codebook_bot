@@ -1,0 +1,55 @@
+services:
+  bot:
+    build: .
+    container_name: codebook_bot
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - .:/app  # For development - remove for production
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  fastapi:
+    build: .
+    container_name: fastapi_service
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    expose:
+      - "8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - bot
+    restart: unless-stopped
+
+  streamlit:
+    build: .
+    container_name: streamlit_app
+    command: streamlit run stream.py --server.port=8501 --server.address=0.0.0.0
+    expose:
+      - "8501"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:latest
+    container_name: caddy_reverse_proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    depends_on:
+      - fastapi
+      - streamlit
+
+volumes:
+  caddy_data:
+  caddy_config:
