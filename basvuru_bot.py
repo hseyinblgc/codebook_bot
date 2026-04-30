@@ -155,10 +155,9 @@ class Admin:
 
 
 ## USERBOT
-chat_id = ""
 _user_bot = Bot(token=user_token)
-async def send_user_message(text: str) -> None:
-    await _user_bot.send_message(chat_id=chat_id, text=text)
+async def send_user_message(text: str, user_id: int) -> None:
+    await _user_bot.send_message(chat_id=user_id, text=text)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Mini App URL (HTTPS olmak zorundadır)
@@ -167,6 +166,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         # Write here if there is no user info
         user_id = None
+    # streamlit_url = f"https://senin-streamlit-uygulaman.com/?uid={user_id}"
     miniapp_url = f"https://www.google.com/search?q={user_id}"
 
     # Inline klavye butonu oluşturma

@@ -13,11 +13,13 @@ app = FastAPI()
 
 
 class Basvuru(BaseModel):
+    telegram_id: int
     ad_soyad: str
     github_user: str
     proje_adi: str
     proje_ozet: str
     onay: bool
+
 
 
 
@@ -48,7 +50,7 @@ async def run_admin_flow(data: Basvuru):
         f"Projeniz reddedildi.\n"
         f"{summary}\n\n"
         f"Red sebebi:\n {reason}")
-    await send_user_message(text=message)
+    await send_user_message(text=message, user_id=data.telegram_id)
 
 
 @app.post("/basvuru")

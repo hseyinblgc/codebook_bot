@@ -3,10 +3,21 @@ import requests
 
 API_URL = "http://127.0.0.1:8000/basvuru"
 
+# Get ID from URL
+user_id_int = None
+raw_uid = st.query_params.get("uid")
+
+if raw_uid:
+    try:
+        # Sayıya çevir
+        user_id_int = int(raw_uid)
+    except ValueError:
+        st.error("Hatalı User ID formatı!")
+
 # Sayfa Başlığı
 st.set_page_config(page_title="Proje Kayıt Formu", layout="centered")
 
-st.title("🚀 Açık Kaynak Proje Başvuru Formu")
+st.title("Açık Kaynak Proje Başvuru Formu")
 st.write(
     "Lütfen aşağıdaki bilgileri eksiksiz doldurunuz. Tüm alanlar zorunludur."
     )
@@ -56,6 +67,7 @@ if submit_button:
         # Verileri ekrana yazdırma (veya bir veritabanına gönderme)
         st.balloons()
         payload = {
+            "telegram_id": user_id_int,
             "ad_soyad": ad_soyad,
             "github_user": github_user,
             "proje_adi": proje_adi,
