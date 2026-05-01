@@ -1,5 +1,5 @@
 from fastapi import FastAPI, BackgroundTasks
-from pydantic import BaseModel
+from pydantic import BaseModel, Field  # Field buradan gelsin
 from basvuru_bot import Admin, send_user_message
 from config import admin_token, user_token, admin_id
 
@@ -13,11 +13,11 @@ app = FastAPI()
 
 
 class Basvuru(BaseModel):
-    telegram_id: int
-    ad_soyad: str
-    github_user: str
-    proje_adi: str
-    proje_ozet: str
+    telegram_id: int = Field(..., gt=0, le=9999999999)
+    ad_soyad: str = Field(..., min_length=2, max_length=100)
+    github_user: str = Field(..., pattern=r'^[a-zA-Z0-9-]{1,39}$')
+    proje_adi: str = Field(..., min_length=1, max_length=200)
+    proje_ozet: str = Field(..., min_length=10, max_length=5000)
     onay: bool
 
 
