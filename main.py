@@ -1,5 +1,9 @@
-from fastapi import FastAPI, BackgroundTasks
-from pydantic import BaseModel, Field  # Field buradan gelsin
+from fastapi import FastAPI, BackgroundTasks, Request
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from basvuru_bot import Admin, send_user_message
 from config import admin_token, user_token, admin_id
 
@@ -11,7 +15,18 @@ admin_service = Admin(
 
 app = FastAPI()
 
+# IP Limit
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
 
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Çok fazla istek. Lütfen daha sonra tekrar deneyin."}
+    )
+
+# Veriyi doğrula
 class Basvuru(BaseModel):
     telegram_id: int = Field(..., gt=0, le=9999999999)
     ad_soyad: str = Field(..., min_length=2, max_length=100)
@@ -20,9 +35,7 @@ class Basvuru(BaseModel):
     proje_ozet: str = Field(..., min_length=10, max_length=5000)
     onay: bool
 
-
-
-
+# Admin onay mesajı (Mesaj içeriği)
 def build_admin_message(data: Basvuru) -> str:
     return (
         f"Proje adı: {data.proje_adi}\n\n"
@@ -31,6 +44,7 @@ def build_admin_message(data: Basvuru) -> str:
         f"GitHub: {data.github_user}"
     )
 
+# Admin onay mesajı
 async def run_admin_flow(data: Basvuru):
     message_text ="Yeni başvuru geldi. Onaylıyor musunuz?\n\n" + build_admin_message(data)
     result = await admin_service.request_admin_decision(
@@ -54,7 +68,8 @@ async def run_admin_flow(data: Basvuru):
 
 
 @app.post("/basvuru")
-async def basvuru_al(data: Basvuru, background_tasks: BackgroundTasks):
+@limiter.limit("3/minute")
+async def basvuru_al(request: Request, data: Basvuru, background_tasks: BackgroundTasks):
     background_tasks.add_task(run_admin_flow, data)
     return {
         "ok": True,

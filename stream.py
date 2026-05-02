@@ -80,5 +80,22 @@ if submit_button:
             resp.raise_for_status()
             data = resp.json()
             st.success(data.get("mesaj", "Mesaj bulunamadi"))
+        except requests.HTTPError as e:
+            resp = getattr(e, "response", None)
+            if resp is not None and resp.status_code == 429:
+                try:
+                    # Sunucudan geliyorsa kendi mesajını kullan, yoksa default Türkçe mesaj
+                    detail = resp.json().get("detail")
+                except Exception:
+                    detail = None
+                st.error(detail or "Çok fazla istek. Lütfen daha sonra tekrar deneyin.")
+            else:
+                detail = None
+                if resp is not None:
+                    try:
+                        detail = resp.json().get("detail")
+                    except Exception:
+                        detail = resp.text
+                st.error(f"Gonderim hatasi: {detail or str(e)}")
         except requests.RequestException as e:
             st.error(f"Gonderim hatasi: {e}")
