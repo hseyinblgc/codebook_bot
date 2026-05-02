@@ -3,71 +3,32 @@ import requests
 
 API_URL = "http://127.0.0.1:8000/basvuru"
 
-# Get ID from URL
-user_id_int = None
-raw_uid = st.query_params.get("uid")
+token = st.query_params.get("token")
 
-if raw_uid:
-    try:
-        # Sayıya çevir
-        user_id_int = int(raw_uid)
-    except ValueError:
-        st.error("Hatalı User ID formatı!")
-
-# Sayfa Başlığı
 st.set_page_config(page_title="Proje Kayıt Formu", layout="centered")
 
 st.title("Açık Kaynak Proje Başvuru Formu")
-st.write(
-    "Lütfen aşağıdaki bilgileri eksiksiz doldurunuz. Tüm alanlar zorunludur."
-    )
 
-# Form Başlangıcı
+if not token:
+    st.error("Geçersiz veya eksik bağlantı.")
+    st.stop()
+
 with st.form("proje_formu", clear_on_submit=False):
-    # Kullanıcı Bilgileri
     ad_soyad = st.text_input("Adınız ve Soyadınız")
-    github_user = st.text_input("GitHub Kullanıcı Adınız (Örn: username)")
-
-    # Proje Bilgileri
+    github_user = st.text_input("GitHub Kullanıcı Adınız")
     proje_adi = st.text_input("Proje Adı")
-    proje_ozet = st.text_area(
-        "Projenizden kısaca bahsedin (Birkaç cümle)",
-        help="Projenin amacını ve ne yaptığını açıklayın.")
-
-    # Lisans Metni ve Onay Kutusu
-    st.markdown("### ⚖️ Lisans ve Kullanım Şartları")
-    lisans_metni = """
-    Bu proje tamamen açık kaynaklı olacak ve otomatik olarak **AGPLv3 Lisansıyla** lisanslanacak. 
-    Kısaca kamuya ait olacak. Bu proje benim diyerek sana yardım eden kullanıcıların emeğini çalamaz, 
-    kendine saklayamazsın. Ayrıca kendi kişisel işini başkasına yaptırıp üzerinden maddiyat elde edemezsin. 
-    Kişisel işini başkasına yaptıramazsın. Bu proje OpenSource topluluğuna ait olacak.
-    """
-    st.info(lisans_metni)
-
-    onay = st.checkbox(
-        "Yukarıdaki şartları ve lisans anlaşmasını kabul ediyorum.")
-
-    # Gönder Butonu
+    proje_ozet = st.text_area("Projenizden kısaca bahsedin")
+    onay = st.checkbox("Yukarıdaki şartları kabul ediyorum.")
     submit_button = st.form_submit_button("Başvuruyu Tamamla")
 
-# Form Gönderildiğinde Yapılacak Kontroller
 if submit_button:
-    # Zorunlu alan kontrolü
     if not ad_soyad or not github_user or not proje_adi or not proje_ozet:
-        st.error("Lütfen tüm metin alanlarını doldurduğunuzdan emin olun!")
+        st.error("Lütfen tüm alanları doldurun.")
     elif not onay:
-        st.warning(
-            "Devam etmek için lisans anlaşmasını onaylamanız gerekmektedir.")
+        st.warning("Devam etmek için onay vermelisiniz.")
     else:
-        # Başarılı kayıt durumunda yapılacak işlemler
-        st.success(
-            f"Teşekkürler {ad_soyad}! Projeniz '{proje_adi}'"
-            "başarıyla kaydedildi.")
-
-        # Verileri ekrana yazdırma (veya bir veritabanına gönderme)
-        st.balloons()
         payload = {
-            "telegram_id": user_id_int,
+            "token": token,
             "ad_soyad": ad_soyad,
             "github_user": github_user,
             "proje_adi": proje_adi,
@@ -79,23 +40,16 @@ if submit_button:
             resp = requests.post(API_URL, json=payload, timeout=10)
             resp.raise_for_status()
             data = resp.json()
-            st.success(data.get("mesaj", "Mesaj bulunamadi"))
+            st.success(data.get("mesaj", "Başvuru alındı."))
         except requests.HTTPError as e:
             resp = getattr(e, "response", None)
             if resp is not None and resp.status_code == 429:
                 try:
-                    # Sunucudan geliyorsa kendi mesajını kullan, yoksa default Türkçe mesaj
                     detail = resp.json().get("detail")
                 except Exception:
                     detail = None
                 st.error(detail or "Çok fazla istek. Lütfen daha sonra tekrar deneyin.")
             else:
-                detail = None
-                if resp is not None:
-                    try:
-                        detail = resp.json().get("detail")
-                    except Exception:
-                        detail = resp.text
-                st.error(f"Gonderim hatasi: {detail or str(e)}")
+                st.error(f"Gönderim hatası: {str(e)}")
         except requests.RequestException as e:
-            st.error(f"Gonderim hatasi: {e}")
+            st.error(f"Gönderim hatası: {e}")

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, BackgroundTasks, Request
+from fastapi import FastAPI, BackgroundTasks, Request, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from slowapi import Limiter
@@ -6,6 +6,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from basvuru_bot import Admin, send_user_message
 from config import admin_token, user_token, admin_id
+from auth_token import verify_token
 
 admin_service = Admin(
     admin_token=admin_token,
@@ -28,9 +29,9 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
 
 # Veriyi doğrula
 class Basvuru(BaseModel):
-    telegram_id: int = Field(..., gt=0, le=9999999999)
+    token: str = Field(..., min_length=10)
     ad_soyad: str = Field(..., min_length=2, max_length=100)
-    github_user: str = Field(..., pattern=r'^[a-zA-Z0-9-]{1,39}$')
+    github_user: str = Field(..., min_length=1, max_length=39)
     proje_adi: str = Field(..., min_length=1, max_length=200)
     proje_ozet: str = Field(..., min_length=10, max_length=5000)
     onay: bool
@@ -45,8 +46,8 @@ def build_admin_message(data: Basvuru) -> str:
     )
 
 # Admin onay mesajı
-async def run_admin_flow(data: Basvuru):
-    message_text ="Yeni başvuru geldi. Onaylıyor musunuz?\n\n" + build_admin_message(data)
+async def run_admin_flow(data: Basvuru, telegram_id: int):
+    message_text = "Yeni başvuru geldi. Onaylıyor musunuz?\n\n" + build_admin_message(data)
     result = await admin_service.request_admin_decision(
         message_text,
         timeout_seconds=300,
@@ -57,20 +58,26 @@ async def run_admin_flow(data: Basvuru):
     summary = build_admin_message(data)
 
     if status == "approved":
-        message = ("Tebrikler! Projeniz onaylandı. \n"
-                  f"{summary}")
+        message = "Tebrikler! Projeniz onaylandı.\n" + summary
     else:
         message = (
-        f"Projeniz reddedildi.\n"
-        f"{summary}\n\n"
-        f"Red sebebi:\n {reason}")
-    await send_user_message(text=message, user_id=data.telegram_id)
+            f"Projeniz reddedildi.\n"
+            f"{summary}\n\n"
+            f"Red sebebi:\n {reason}"
+        )
+
+    await send_user_message(text=message, user_id=telegram_id)
 
 
 @app.post("/basvuru")
 @limiter.limit("3/minute")
 async def basvuru_al(request: Request, data: Basvuru, background_tasks: BackgroundTasks):
-    background_tasks.add_task(run_admin_flow, data)
+    try:
+        telegram_id = verify_token(data.token)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    background_tasks.add_task(run_admin_flow, data, telegram_id)
     return {
         "ok": True,
         "mesaj": "Başvuru alındı. Admin onayı bekleniyor. Sayfayı kapatabilirsiniz"

@@ -6,6 +6,8 @@ from telegram import (Update, InlineKeyboardButton,
                       InlineKeyboardMarkup, WebAppInfo, Bot)
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 from config import user_token
+from auth_token import make_token
+
 # Bot loglarını görmek için yapılandırma
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -160,17 +162,18 @@ async def send_user_message(text: str, user_id: int) -> None:
     await _user_bot.send_message(chat_id=user_id, text=text)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Mini App URL (HTTPS olmak zorundadır)
-    if update.message is not None and update.message.from_user is not None:
-        user_id = update.message.from_user.id
-    else:
-        # Write here if there is no user info
-        user_id = None
-    # streamlit_url = f"https://senin-streamlit-uygulaman.com/?uid={user_id}"
-    miniapp_url = f"https://www.google.com/search?q={user_id}"
+    # Hata durumunda erken dön
+    if update.message is None or update.message.from_user is None:
+        if update.effective_message:
+            await update.effective_message.reply_text("Hatalı istek.")
+        return
 
-    # Inline klavye butonu oluşturma
-    # 'web_app' parametresi butona tıklandığında Mini App'in açılmasını sağlar
+    # Buradan itibaren user_id ve token güvenli
+    user_id = update.message.from_user.id
+    token = make_token(user_id, ttl_seconds=3600)
+    miniapp_url = f"https://www.google.com/search?q={token}"
+    print(f"token = {token}") # Test için 
+
     keyboard = [
         [
             InlineKeyboardButton(
