@@ -22,6 +22,12 @@ app.state.limiter = limiter
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    if request.url.path == "/verify-token":
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Doğrulama sınırına ulaşıldı. Biraz sonra tekrar deneyin."}
+        )
+
     return JSONResponse(
         status_code=429,
         content={"detail": "Çok fazla istek. Lütfen daha sonra tekrar deneyin."}
@@ -91,7 +97,8 @@ async def basvuru_al(request: Request, data: Basvuru, background_tasks: Backgrou
 
 
 @app.post("/verify-token")
-async def verify_token_endpoint(payload: TokenPayload):
+@limiter.limit("3/minute")
+async def verify_token_endpoint(request: Request, payload: TokenPayload):
     try:
         verify_token(payload.token)
     except ValueError:
