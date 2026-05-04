@@ -172,7 +172,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     token = make_token(user_id, ttl_seconds=3600)
     miniapp_url = f"{miniapp}/?token={token}"
-    print(f"token = {token}") # Test için 
 
     keyboard = [
         [
