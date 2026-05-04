@@ -72,6 +72,6 @@ if submit_button:
                     detail = None
                 st.error(detail or "Çok fazla istek. Lütfen daha sonra tekrar deneyin.")
             else:
-                st.error(f"Gönderim hatası: {str(e)}")
-        except requests.RequestException as e:
-            st.error(f"Gönderim hatası: {e}")
+                st.error("Gönderim hatası")
+        except requests.RequestException:
+            st.error("Gönderim hatası")

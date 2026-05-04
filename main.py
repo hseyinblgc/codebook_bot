@@ -79,8 +79,8 @@ async def run_admin_flow(data: Basvuru, telegram_id: int):
 async def basvuru_al(request: Request, data: Basvuru, background_tasks: BackgroundTasks):
     try:
         telegram_id = verify_token(data.token)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Geçersiz veya süresi dolmuş bağlantı.")
 
     background_tasks.add_task(run_admin_flow, data, telegram_id)
     return {
@@ -94,7 +94,7 @@ async def basvuru_al(request: Request, data: Basvuru, background_tasks: Backgrou
 async def verify_token_endpoint(payload: TokenPayload):
     try:
         verify_token(payload.token)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Geçersiz veya süresi dolmuş bağlantı.")
     return {"ok": True}
 
