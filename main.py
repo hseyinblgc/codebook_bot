@@ -27,7 +27,7 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
         content={"detail": "Çok fazla istek. Lütfen daha sonra tekrar deneyin."}
     )
 
-# Veriyi doğrula
+# Veriyi doğrula (başvuru)
 class Basvuru(BaseModel):
     token: str = Field(..., min_length=10)
     ad_soyad: str = Field(..., min_length=2, max_length=100)
@@ -35,6 +35,11 @@ class Basvuru(BaseModel):
     proje_adi: str = Field(..., min_length=1, max_length=200)
     proje_ozet: str = Field(..., min_length=10, max_length=5000)
     onay: bool
+
+# Veriyi doğrula (verify-token)
+class TokenPayload(BaseModel):
+    token: str = Field(..., min_length=10)
+
 
 # Admin onay mesajı (Mesaj içeriği)
 def build_admin_message(data: Basvuru) -> str:
@@ -83,4 +88,13 @@ async def basvuru_al(request: Request, data: Basvuru, background_tasks: Backgrou
         "mesaj": "Başvuru alındı. Admin onayı bekleniyor. Sayfayı kapatabilirsiniz"
     }
 
+
+
+@app.post("/verify-token")
+async def verify_token_endpoint(payload: TokenPayload):
+    try:
+        verify_token(payload.token)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"ok": True}
 

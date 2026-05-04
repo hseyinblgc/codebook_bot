@@ -1,7 +1,9 @@
 import streamlit as st
 import requests
+from config import API
 
-API_URL = "http://127.0.0.1:8000/basvuru"
+API_URL = API + "/basvuru"
+API_VERIFY = API + "/verify-token"
 
 token = st.query_params.get("token")
 
@@ -12,6 +14,26 @@ st.title("Açık Kaynak Proje Başvuru Formu")
 if not token:
     st.error("Geçersiz veya eksik bağlantı.")
     st.stop()
+
+# Sunucuya doğrulama isteği at
+try:
+    v = requests.post(API_VERIFY, json={"token": token}, timeout=5)
+    v.raise_for_status()
+except requests.HTTPError as e:
+    # sunucu 400 ise kullanıcıya temiz mesaj göster
+    detail = None
+    if getattr(e, "response", None) is not None:
+        try:
+            detail = e.response.json().get("detail")
+        except Exception:
+            detail = e.response.text
+    st.error("Geçersiz veya süresi dolmuş bağlantı.")
+    st.stop()
+except requests.RequestException:
+    st.error("Doğrulama sunucusuna ulaşılamıyor. Lütfen daha sonra deneyin.")
+    st.stop()
+
+# doğrulandı → formu göster (mevcut kod devam eder)
 
 with st.form("proje_formu", clear_on_submit=False):
     ad_soyad = st.text_input("Adınız ve Soyadınız")

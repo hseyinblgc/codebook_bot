@@ -5,13 +5,13 @@ from uuid import uuid4
 from telegram import (Update, InlineKeyboardButton,
                       InlineKeyboardMarkup, WebAppInfo, Bot)
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
-from config import user_token
+from config import user_token, miniapp
 from auth_token import make_token
 
 # Bot loglarını görmek için yapılandırma
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    level=logging.WARNING
 )
 
 BOT_TOKEN = user_token
@@ -171,7 +171,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Buradan itibaren user_id ve token güvenli
     user_id = update.message.from_user.id
     token = make_token(user_id, ttl_seconds=3600)
-    miniapp_url = f"https://www.google.com/search?q={token}"
+    miniapp_url = f"{miniapp}/?token={token}"
     print(f"token = {token}") # Test için 
 
     keyboard = [
