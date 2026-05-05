@@ -5,8 +5,8 @@ from uuid import uuid4
 from telegram import (Update, InlineKeyboardButton,
                       InlineKeyboardMarkup, WebAppInfo, Bot)
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
-from config import user_token, miniapp
 from auth_token import make_token
+import os
 
 # Bot loglarını görmek için yapılandırma
 logging.basicConfig(
@@ -14,7 +14,8 @@ logging.basicConfig(
     level=logging.WARNING
 )
 
-BOT_TOKEN = user_token
+user_token = os.getenv("USER_TOKEN", "")
+miniapp = os.getenv("MINI_APP", "")
 
 ## ADMINBOT
 class Admin:
@@ -193,7 +194,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 if __name__ == '__main__':
 
     # Uygulamayı oluşturma ve başlatma
-    application = ApplicationBuilder().token(BOT_TOKEN).build()
+    application = ApplicationBuilder().token(user_token).build()
 
     # /start komutunu yakalayan handler
     start_handler = CommandHandler('start', start)

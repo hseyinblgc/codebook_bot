@@ -1,7 +1,8 @@
 import streamlit as st
 import requests
-from config import API
+import os
 
+API = os.getenv("API", "")
 API_URL = API + "/basvuru"
 API_VERIFY = API + "/verify-token"
 

@@ -5,9 +5,14 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from basvuru_bot import Admin, send_user_message
-from config import admin_token, user_token, admin_id
 from auth_token import verify_token
+import os
 
+
+admin_token = os.getenv("ADMIN_TOKEN", "")
+user_token = os.getenv("USER_TOKEN", "")
+admin_id_raw = os.getenv("ADMIN_ID", "")
+admin_id = int(admin_id_raw)
 admin_service = Admin(
     admin_token=admin_token,
     user_token=user_token,

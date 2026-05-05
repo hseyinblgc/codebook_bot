@@ -3,9 +3,10 @@ import binascii
 import hashlib
 import hmac
 import time
-from config import secret
+import os
 
-SECRET_KEY = secret
+
+SECRET_KEY = os.getenv("SECRET", "")
 
 def make_token(telegram_id: int, ttl_seconds: int = 3600) -> str:
     expires_at = int(time.time()) + ttl_seconds
