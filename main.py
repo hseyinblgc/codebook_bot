@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from basvuru_bot import Admin, send_user_message
+from apply_bot import Admin, send_user_message
 from auth_token import verify_token
 import os
 
