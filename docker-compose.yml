@@ -1,42 +1,26 @@
 services:
   bot:
-    build: .
-    container_name: codebook_bot
-    environment:
-      - PYTHONUNBUFFERED=1
-    volumes:
-      - .:/app  # For development - remove for production
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    env_file:
-      - .env
-  fastapi:
-    build: .
-    container_name: fastapi_service
-    command: uvicorn main:app --host 0.0.0.0 --port 8000
-    expose:
-      - "8000"
-    environment:
-      - PYTHONUNBUFFERED=1
-    depends_on:
-      - bot
+    image: darkinzen/codebook_bot:dev-v2
+    command: python apply_bot.py
     restart: unless-stopped
     env_file:
       - .env
 
-  streamlit:
-    build: .
-    container_name: streamlit_app
-    command: streamlit run stream.py --server.port=8501 --server.address=0.0.0.0
-    expose:
-      - "8501"
-    environment:
-      - PYTHONUNBUFFERED=1
+  fastapi:
+    image: darkinzen/codebook_bot:dev-v2
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
     restart: unless-stopped
+    depends_on:
+      - bot
+    env_file:
+      - .env
+
+  streamlit:
+    image: darkinzen/codebook_bot:dev-v2
+    command: streamlit run stream.py --server.port=8501 --server.address=0.0.0.0
+    restart: unless-stopped
+    expose:
+      - "8000"
     env_file:
       - .env
 

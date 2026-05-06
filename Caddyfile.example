@@ -1,9 +1,4 @@
 app.example.com {
-    handle /api/* {
-        uri strip_prefix /api
-        reverse_proxy fastapi:8000
-    }
-
     handle /* {
         reverse_proxy streamlit:8501
     }
