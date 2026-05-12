@@ -1,5 +1,12 @@
 __pycache__/*
 .venv/*
 
+# exclude secret files
 .env
 Caddyfile
+
+# exclude secret folder
+data/*
+
+#compose.yml for test builds
+compose.yml

@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, BackgroundTasks, Request, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -6,7 +7,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from apply_bot import Admin, send_user_message
 from auth_token import verify_token
-import os
+from database import insertdb
 
 
 admin_token = os.getenv("ADMIN_TOKEN", "")
@@ -92,6 +93,16 @@ async def basvuru_al(request: Request, data: Basvuru, background_tasks: Backgrou
         telegram_id = verify_token(data.token)
     except ValueError:
         raise HTTPException(status_code=400, detail="Geçersiz veya süresi dolmuş bağlantı.")
+
+    values = (
+        telegram_id,
+        data.ad_soyad,
+        data.github_user,
+        data.proje_adi,
+        data.proje_ozet,
+        "pending",
+    )
+    insertdb(values)
 
     background_tasks.add_task(run_admin_flow, data, telegram_id)
     return {
