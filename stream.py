@@ -71,7 +71,8 @@ if submit_button:
                     detail = resp.json().get("detail")
                 except Exception:
                     detail = None
-                st.error(detail or "Çok fazla istek. Lütfen daha sonra tekrar deneyin.")
+                st.error(detail or "Çok fazla istek. "
+                         "Lütfen daha sonra tekrar deneyin.")
             else:
                 st.error("Gönderim hatası")
         except requests.RequestException:
