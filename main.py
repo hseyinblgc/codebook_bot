@@ -92,7 +92,7 @@ async def verify_token_endpoint(request: Request, payload: TokenPayload):
 
 
 @app.post("/admin-auth")
-@limiter.limit("20/minute")
+@limiter.limit("3/minute")
 async def verify_admin(request: Request, payload: TokenPayload):
     try:
         telegram_id = verify_token(payload.token)
