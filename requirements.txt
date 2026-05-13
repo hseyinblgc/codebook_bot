@@ -2,6 +2,7 @@ fastapi==0.136.1
 httpx==0.28.1
 pydantic==2.13.4
 python-telegram-bot==22.7
+python_jose==3.5.0
 Requests==2.34.1
 slowapi==0.1.9
 streamlit==1.57.0
