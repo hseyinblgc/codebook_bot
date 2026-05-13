@@ -1,9 +1,20 @@
 import logging
-from telegram import (Update, InlineKeyboardButton,
-                      InlineKeyboardMarkup, WebAppInfo, Bot)
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, CallbackQueryHandler
+from telegram import (
+    Update,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    WebAppInfo,
+    Bot,
+)
+from telegram.ext import (
+    ApplicationBuilder,
+    ContextTypes,
+    CommandHandler,
+    CallbackQueryHandler,
+)
 from auth_token import make_token
 import os
+import httpx
 
 
 # Bot loglarını görmek için yapılandırma
@@ -16,10 +27,13 @@ user_token = os.getenv("USER_TOKEN", "")
 miniapp = os.getenv("MINI_APP", "")
 admin_id = int(os.getenv("ADMIN_ID", 0))
 
-## USERBOT
+# USERBOT
 _user_bot = Bot(token=user_token)
+
+
 async def send_user_message(text: str, user_id: int) -> None:
     await _user_bot.send_message(chat_id=user_id, text=text)
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Hata durumunda erken dön
@@ -49,12 +63,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=reply_markup
         )
 
+
 # Admin
 async def requests(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Hata durumunda erken dön
     user = update.effective_user
-    if user is None or user.id != (admin_id):
-        return  # sessizce çık
+    if user is None or user.id != admin_id:
+        return
 
     keyboard = [
         [
@@ -71,28 +86,58 @@ async def requests(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
-async def approval_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def approval_callback(
+        update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = get_user_id(update)
+    if user_id is None:
+        return
     query = update.callback_query
     if query is None:
         return
 
     await query.answer()
 
-    if query.data == "approve":
-        await query.edit_message_text("Onay verdiniz.")
-    elif query.data == "reject":
-        await query.edit_message_text("Onaylamadınız.")
+    token = make_token(user_id, ttl_seconds=3600)
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                "http://fastapi:8000/admin-auth",
+                json={"token": token},
+            )
+        if response.status_code == 429:
+            await query.edit_message_text(
+                "Çok fazla işlem yaptın. Daha sonra tekrar dene.")
+            return
+        if response.status_code != 200:
+            await query.edit_message_text(
+                f"Hata: {response.status_code}")
+            return
+
+        result = response.json()
+
+        if query.data == "approve":
+            await query.edit_message_text(
+                f"Onay verdiniz. API yanıtı: {result}")
+        elif query.data == "reject":
+            await query.edit_message_text(
+                f"Onaylamadınız. API yanıtı: {result}")
+
+    except httpx.HTTPError as e:
+        await query.edit_message_text(f"API bağlantı hatası: {str(e)}")
+
+
+def get_user_id(update: Update) -> int | None:
+    if update.effective_user is None:
+        return None
+    return update.effective_user.id
 
 
 if __name__ == '__main__':
 
     # Uygulamayı oluşturma ve başlatma
     application = ApplicationBuilder().token(user_token).build()
-
-    # /start komutunu yakalayan handler
-    start_handler = CommandHandler('start', start)
-    requests_handler = CommandHandler('requests', requests)
-    application.add_handler(start_handler)
-    application.add_handler(requests_handler)
+    application.add_handler(CommandHandler('start', start))
+    application.add_handler(CommandHandler('requests', requests))
     application.add_handler(CallbackQueryHandler(approval_callback))
     application.run_polling()

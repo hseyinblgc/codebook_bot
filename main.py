@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, BackgroundTasks, Request, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -9,7 +10,7 @@ from database import insertdb
 
 app = FastAPI()
 
-
+admin_id = os.getenv("ADMIN_ID")
 # IP Limit
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
@@ -75,3 +76,16 @@ async def verify_token_endpoint(request: Request, payload: TokenPayload):
         raise HTTPException(status_code=400, detail="Geçersiz veya süresi dolmuş bağlantı.")
     return {"ok": True}
 
+@app.post("/admin-auth")
+@limiter.limit("20/minute")
+async def verify_admin(request: Request, payload: TokenPayload):
+    try:
+        telegram_id = verify_token(payload.token)
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    # Admin ID doğrula
+    if str(telegram_id) != str(admin_id):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    return {"ok": True}
